@@ -203,23 +203,28 @@ class AutomationGUI(QtWidgets.QMainWindow):
         super().__init__()
         uic.loadUi('UI/main.ui', self)
 
-        # Create a splitter for the main layout
-        self.splitter = QSplitter(Qt.Horizontal)
-        self.setCentralWidget(self.splitter)
+        # Create a tab widget
+        self.tab_widget = QtWidgets.QTabWidget()
+        self.setCentralWidget(self.tab_widget)
 
-        # Create a widget for the left side (existing content)
-        self.left_widget = QtWidgets.QWidget()
-        self.left_layout = QtWidgets.QVBoxLayout(self.left_widget)
+        # Create tabs
+        self.block_tab = QtWidgets.QWidget()
+        self.config_tab = QtWidgets.QWidget()
+        self.report_tab = QtWidgets.QWidget()
+
+        # Add tabs to the tab widget
+        self.tab_widget.addTab(self.block_tab, "Blocks")
+        self.tab_widget.addTab(self.config_tab, "Configuration")
+        self.tab_widget.addTab(self.report_tab, "Report")
 
         # Set up the block tab
         self.setup_block_tab()
 
-        # Add the left widget to the splitter
-        self.splitter.addWidget(self.left_widget)
+        # Set up the configuration tab
+        self.setup_config_tab()
 
-        # Create and add the console widget to the splitter
-        self.console = QTextEdit()
-        self.splitter.addWidget(self.console)
+        # Set up the report tab
+        self.setup_report_tab()
 
         # Set up logging to the console
         self.setup_logging()
@@ -231,13 +236,20 @@ class AutomationGUI(QtWidgets.QMainWindow):
         logging.getLogger().setLevel(logging.INFO)
 
     def setup_block_tab(self):
-        block_layout = self.left_layout
+        layout = QtWidgets.QVBoxLayout(self.block_tab)
+
+        # Create a splitter for the main layout
+        splitter = QSplitter(Qt.Horizontal)
+        layout.addWidget(splitter)
+
+        # Create a widget for the left side (existing content)
+        left_widget = QtWidgets.QWidget()
+        left_layout = QtWidgets.QVBoxLayout(left_widget)
 
         # Top: Available blocks (1/3 of the height)
         top_widget = QtWidgets.QWidget()
-        top_layout = QtWidgets.QVBoxLayout()
+        top_layout = QtWidgets.QVBoxLayout(top_widget)
         top_widget.setLayout(top_layout)
-        top_widget.setFixedHeight(self.height() // 2)
 
         top_layout.addWidget(QtWidgets.QLabel("Available Blocks:"))
 
@@ -261,8 +273,7 @@ class AutomationGUI(QtWidgets.QMainWindow):
 
         # Bottom: Steps and Test Case Name
         bottom_widget = QtWidgets.QWidget()
-        bottom_layout = QtWidgets.QVBoxLayout()
-        bottom_widget.setLayout(bottom_layout)
+        bottom_layout = QtWidgets.QVBoxLayout(bottom_widget)
 
         # Add Test Case Name input
         test_case_layout = QtWidgets.QHBoxLayout()
@@ -300,11 +311,28 @@ class AutomationGUI(QtWidgets.QMainWindow):
 
         bottom_layout.addLayout(button_layout)
 
-        block_layout.addWidget(top_widget)
-        block_layout.addWidget(bottom_widget, 2)
+        left_layout.addWidget(top_widget)
+        left_layout.addWidget(bottom_widget, 2)
+
+        # Add the left widget to the splitter
+        splitter.addWidget(left_widget)
+
+        # Create and add the console widget to the splitter
+        self.console = QTextEdit()
+        splitter.addWidget(self.console)
 
         self.steps = []
         self.add_step()  # Add initial step
+
+    def setup_config_tab(self):
+        layout = QtWidgets.QVBoxLayout(self.config_tab)
+        layout.addWidget(QtWidgets.QLabel("Configuration Tab"))
+        # Add configuration widgets here
+
+    def setup_report_tab(self):
+        layout = QtWidgets.QVBoxLayout(self.report_tab)
+        layout.addWidget(QtWidgets.QLabel("Report Tab"))
+        # Add report widgets here
 
     def add_step(self, with_placeholder=True):
         step = Step(with_placeholder=with_placeholder)
