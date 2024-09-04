@@ -1,0 +1,12 @@
+{
+  "step": {
+    "1": {
+      "module": "ssm",
+      "block": "Print SSM Status"
+    },
+    "2": {
+      "module": "thermal",
+      "block": "Print Thermal Status"
+    }
+  }
+}
