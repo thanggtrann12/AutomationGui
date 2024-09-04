@@ -4,3 +4,4 @@ src/__pycache__/
 .vscode/
 tools/TTFisClient.py
 tools/ToellnerDriver.py
+log/
