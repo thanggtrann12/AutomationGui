@@ -1,5 +1,5 @@
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent, QPainter, QPen
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QApplication
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QApplication,QLineEdit
 from PyQt5.QtCore import Qt
 from .CodeBlock import *
 
@@ -100,6 +100,12 @@ class StepContainer(QWidget):
         self.setLayout(self.layout)
         self.setStyleSheet("border: 2px solid #a0a0a0; border-radius: 5px; background-color: #f0f0f0;")
         self.setAcceptDrops(True)
+        self.name_input = QLineEdit("New Test Case")
+        self.name_input.setAlignment(Qt.AlignCenter)
+        self.name_input.setFixedHeight(40)
+        self.name_input.setStyleSheet(
+            "background-color: #e0e0e0; border: 1px dashed #a0a0a0; border-radius: 5px; font-weight: bold; font-size: 14px;")
+        self.layout.addWidget(self.name_input)
 
     def paintEvent(self, event):
         painter = QPainter(self)

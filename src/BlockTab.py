@@ -5,8 +5,19 @@ import os  # Import os as it's used in the code
 from .CodeBlock import *
 from .Logging import *
 from .Step import *
-import asyncio
+import logging
+import io
 
+class CaptureHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.logs = io.StringIO()
+
+    def emit(self, record):
+        self.logs.write(self.format(record) + '\n')
+
+    def get_logs(self):
+        return self.logs.getvalue()
 
 class BlockTab:
     def __init__(self, parent=None):
@@ -76,6 +87,7 @@ class BlockTab:
         export_data = {
             "containers": [
                 {
+                    "name": container.name_input.text(),
                     "steps": [
                         {"module": step.block.module_name, "block": step.block.block_name}
                         for step in container.findChildren(Step) if step.block
@@ -127,6 +139,7 @@ class BlockTab:
 
         for container_data in import_data.get("containers", []):
             new_container = self.add_test_case()
+            new_container.name_input.setText(container_data.get("name", "Unnamed Test Case"))
             first_step = True
             for step_data in container_data.get("steps", []):
                 module_name = step_data.get("module")
@@ -134,7 +147,7 @@ class BlockTab:
                 if module_name in BLOCKS and block_name in BLOCKS[module_name]:
                     if first_step:
                         # Replace the placeholder in the first step
-                        first_step_widget = new_container.layout.itemAt(0).widget()
+                        first_step_widget = new_container.layout.itemAt(1).widget()  # Changed from 0 to 1
                         first_step_widget.add_block(f"{module_name}:{block_name}")
                         first_step = False
                     else:
@@ -148,30 +161,62 @@ class BlockTab:
 
         logging.info(f"Code imported from {file_path}")
 
+
+
     async def run_code(self):
+        test_results = {}  # Initialize test_results as a dictionary
         try:
             for container_index, container in enumerate(self.containers, 1):
-                logging.info(f"Running Test Case {container_index}")
+                container_name = container.name_input.text()
+                container_results = {}
+                logging.info(f"Running Test Case: {container_name}")
                 for step_index, step in enumerate(container.findChildren(Step), 1):
                     if step.block:
                         try:
                             logging.info(f"Executing step {step_index}: {step.block.block_name}")
+                            
+                            # Set up capture handler
+                            capture_handler = CaptureHandler()
+                            capture_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+                            logging.getLogger().addHandler(capture_handler)
+                            
+                            # Execute the function
                             result = await step.block.function(*step.block.function_inputs)
+                            
+                            # Get captured logs
+                            step_logs = capture_handler.get_logs()
+                            logging.getLogger().removeHandler(capture_handler)
+                            
+                            success = result is not False
+                            log_message = f"Step {step_index}: {step.block.block_name} executed successfully" if success else f"Error executing step {step_index} ({step.block.block_name}) with: {result}"
+                            
+                            container_results[f"Step {step_index}"] = {
+                                'success': success,
+                                'log': step_logs + log_message
+                            }
 
-                            if result:
+                            if success:
                                 step.set_color("lightgreen")
-                                logging.info(f"Step {step_index}: {step.block.block_name} executed successfully")
+                                logging.info(log_message)
                             else:
                                 step.set_color("lightcoral")
-                                logging.critical(f"Error executing step {step_index} ({step.block.block_name}) with: {result}")
-                                break  # Stop executing this container if a step fails
+                                logging.critical(log_message)
+                                break
 
                         except Exception as e:
-                            logging.error(f"Exception occurred during step {step_index}: {e}")
+                            error_message = f"Exception occurred during step {step_index}: {e}"
+                            container_results[f"Step {step_index}"] = {
+                                'success': False,
+                                'log': error_message
+                            }
+                            logging.error(error_message)
                             step.set_color("lightcoral")
-                            break  # Stop executing this container if an exception occurs
+                            break
 
+                test_results[f"Test Case {container_index}: {container_name}"] = container_results
                 logging.info(f"Finished Test Case {container_index}")
+            
+            generate_test_results_html(test_results)
 
         except Exception as e:
             logging.error(f"Unexpected error: {e}")
