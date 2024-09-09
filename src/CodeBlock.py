@@ -39,13 +39,18 @@ class CodeBlock(QPushButton):
             drag.exec_(Qt.CopyAction)
 
     def mouseDoubleClickEvent(self, e):
+        import re
         if e.button() == Qt.LeftButton and type(self).__name__ is "CodeBlock":
             if self.prepare_input():
-                if "time" in self.block_name:
-                    new_block_name = self.block_name.replace(
-                        "time", str(self.function_inputs[0]))
-                    self.block_name = new_block_name
-                    self.setText(new_block_name)
+                text = re.findall(r'\((.*?)\)', self.block_name)
+
+                new_block_name = self.block_name
+                for item in text:
+                    new_block_name = new_block_name.replace(
+                        f'({item})', f'({str(self.function_inputs)})')
+
+                self.block_name = new_block_name
+                self.setText(new_block_name)
 
     def requires_input(self):
         signature = inspect.signature(self.function)

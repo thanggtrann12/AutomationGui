@@ -48,6 +48,7 @@ class BlockTab:
         self.steps.clear()
         self.add_step()
         self.steps_container.update()
+        logging.info("Clear current test step")
 
     def remove_code(self):
         testcase_name = self.parent.testcase_list.currentText().lower().replace(" ", "_")
@@ -131,6 +132,7 @@ class BlockTab:
 
     async def run_code(self):
         try:
+            success = False
             for i, step in enumerate(self.steps, 1):
                 if step.block:
                     try:
@@ -140,25 +142,23 @@ class BlockTab:
                             *step.block.function_inputs)
 
                         if result:
+                            success = True
+                            step.set_color("lightgreen")
                             logging.info(
                                 f"Step {i}: {step.block.block_name} executed successfully")
-                            # Set background color to light green for success
-                            step.set_color("lightgreen")  # Success
-                        else:  # If the function returns False or fails
-                            logging.critical(
-                                f"Error executing step {i} ({step.block.block_name})")
-                            # Set background color to light red for failure
+                        else:
+                            success = False
                             step.set_color("background-color: lightcoral;")
+                            logging.critical(
+                                f"Error executing step {i} ({step.block.block_name}) with: {result}")
 
                     except Exception as e:
+                        success = False
                         logging.error(
                             f"Exception occurred during step {i}: {e}")
-                        # Set background color to light red for failure due to exception
                         step.set_color("background-color: lightcoral;")
-            else:
-                logging.info("All steps executed successfully")
-                output_file = 'log/log_report.html'
-                export_logs_to_html(output_file)
+            if success:
+                logging.info("All test cases are executed successfully")
 
         except Exception as e:
             logging.error(f"Unexpected error: {e}")

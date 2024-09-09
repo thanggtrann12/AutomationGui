@@ -1,5 +1,6 @@
 import subprocess
 import asyncio
+import logging
 
 
 class ADBCommand:
@@ -16,13 +17,11 @@ class ADBCommand:
                    if "\tdevice" in line or "\trecovery" in line]
         return devices
 
-    def is_recovery_mode(self):
+    def is_recovery_mode(self) -> bool:
         self.refresh_connection()
         if self.is_connected:
-            if "recovery" in self.device_list:
-                return True
-            else:
-                return False
+            return any("\trecovery" in device for device in self.device_list)
+        return False
 
     def refresh_connection(self):
         self.device_list = self.check_devices()
@@ -38,8 +37,11 @@ class ADBCommand:
 
     async def check_root_privilege(self) -> bool:
         self.refresh_connection()
-        result = await self.run_subprocess(["adb", "shell", "id"])
-        return "uid=0(root)" in result.stdout
+        if self.is_recovery_mode():
+            return True
+        else:
+            result = await self.run_subprocess(["adb", "shell", "id"])
+            return "uid=0(root)" in result.stdout
 
     async def run_subprocess(self, command) -> subprocess.CompletedProcess:
         try:
@@ -62,14 +64,16 @@ class ADBCommand:
         result = await self.run_subprocess(full_command)
         return result
 
-    async def reboot_to_mode(self, mode="Normal"):
+    async def reboot_to_mode(self, mode="normal"):
         self.refresh_connection()
         if self.is_connected:
-            await self.run_subprocess(["adb", "reboot", mode])
+            await self.run_subprocess(["adb", "reboot", mode.lower()])
+            await asyncio.sleep(5)
+            self.refresh_connection()
 
-    def push_file(self, file_path, des_path):
+    async def push_file(self, file_path, des_path):
         if self.is_connected:
-            result = self.run_subprocess(["adb", "push", file_path, des_path])
+            result = await self.run_subprocess(["adb", "push", file_path, des_path])
             success_patterns = ["1 file pushed", "0 skipped"]
             fail_patterns = ["error", "failed to copy"]
             return any(pattern in result.stdout for pattern in success_patterns) and not any(pattern in result.stdout for pattern in fail_patterns)
@@ -84,12 +88,13 @@ class ADBCommand:
             result = self.run_adb_shell_command(self.toggle_watchdog_command)
             return result
 
-    def remount(self):
+    async def remount(self):
         if self.is_connected and self.check_root_privilege():
-            result = self.run_subprocess(["adb", "remount"])
+            result = await self.run_subprocess(["adb", "remount"])
             return result
 
 
 # adb = ADBCommand()
+# print(not adb.is_recovery_mode())
 # adb.push_file(
 #     file_path=r"C:\Users\rhn9hc\Desktop\lib\lcm_dynamic_service", des_path="/")

@@ -6,3 +6,6 @@ tools/TTFisClient.py
 tools/ToellnerDriver.py
 log/
 tools/Gen5DebugLibrary.py
+blocks/Ttfis.py
+testcases
+blocks/Debug_Board_Control.py
