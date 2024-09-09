@@ -44,6 +44,9 @@ class AutomationGUI(QtWidgets.QMainWindow):
         self.block_edit_area = self.findChild(
             QtWidgets.QScrollArea, "block_edit_area")
 
+        self.add_test_case_btn = self.findChild(QPushButton, "add_test_case_btn")
+        self.add_test_case_btn.clicked.connect(self.block_tab.add_test_case)
+
     def wrap_async(self, coro):
         return lambda: asyncio.create_task(coro())
 

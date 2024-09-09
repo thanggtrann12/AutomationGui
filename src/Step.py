@@ -1,17 +1,18 @@
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent, QPainter, QPen
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QApplication
 from PyQt5.QtCore import Qt
 from .CodeBlock import *
 
 
 class Step(QWidget):
-    def __init__(self, parent=None, with_placeholder=True):
+    def __init__(self, parent=None, container=None, with_placeholder=True):
         super().__init__(parent)
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
         self.setAcceptDrops(True)
         self.block = None
         self._parent = parent
+        self.container = container
 
         if with_placeholder:
             self.placeholder = QLabel("Drop block here")
@@ -32,10 +33,32 @@ class Step(QWidget):
             event.acceptProposedAction()
 
     def dropEvent(self, event: QDropEvent):
-        module_and_block = event.mimeData().text()
-        self.add_block(module_and_block)
+        source = event.source()
+        if isinstance(source, CodeBlock) or (source is None and event.mimeData().hasText()):
+            # New block being dropped
+            module_and_block = event.mimeData().text()
+            self.add_block(module_and_block)
+            event.acceptProposedAction()
+            if self.container:
+                self._parent.block_tab.add_step(self.container)
+        elif source != self and isinstance(source, Step):
+            # Existing step being moved
+            source_container = source.container
+            target_container = self.container
+
+            source_index = source_container.layout.indexOf(source)
+            target_index = target_container.layout.indexOf(self)
+
+            if source_container == target_container:
+                # Move within the same container
+                source_container.layout.insertWidget(target_index, source)
+            else:
+                # Move between containers
+                source_container.layout.removeWidget(source)
+                target_container.layout.insertWidget(target_index, source)
+                source.container = target_container
+
         event.acceptProposedAction()
-        self._parent.block_tab.add_step()
 
     def add_block(self, module_and_block):
         module_name, block_name = module_and_block.split(':')
@@ -50,14 +73,33 @@ class Step(QWidget):
             block_name, BLOCKS[module_name][block_name], module_name)
         self.layout.addWidget(self.block)
 
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.drag_start_position = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if not (event.buttons() & Qt.LeftButton):
+            return
+        if (event.pos() - self.drag_start_position).manhattanLength() < QApplication.startDragDistance():
+            return
+
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        mime_data.setText(f"{self.block.module_name}:{self.block.block_name}")
+        drag.setMimeData(mime_data)
+
+        drag.exec_(Qt.MoveAction)
+
 
 class StepContainer(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.layout = QVBoxLayout()  # Change back to QVBoxLayout
-        self.layout.setSpacing(20)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout = QVBoxLayout()
+        self.layout.setSpacing(10)
+        self.layout.setContentsMargins(5, 5, 5, 5)
         self.setLayout(self.layout)
+        self.setStyleSheet("border: 2px solid #a0a0a0; border-radius: 5px; background-color: #f0f0f0;")
+        self.setAcceptDrops(True)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -73,6 +115,30 @@ class StepContainer(QWidget):
 
             painter.drawLine(start, end)
 
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        source = event.source()
+        if isinstance(source, CodeBlock) or (source is None and event.mimeData().hasText()):
+            # New block being dropped into container
+            new_step = Step(parent=self.parent(), container=self)
+            self.layout.addWidget(new_step)
+            new_step.dropEvent(event)
+        elif isinstance(source, Step):
+            source_container = source.container
+            if source_container != self:
+                # Move between containers
+                source_container.layout.removeWidget(source)
+                self.layout.addWidget(source)
+                source.container = self
+            else:
+                # Move to the end of the same container
+                self.layout.removeWidget(source)
+                self.layout.addWidget(source)
+        event.acceptProposedAction()
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.update()  # Ensure lines are redrawn when the container is resized
+        self.update()

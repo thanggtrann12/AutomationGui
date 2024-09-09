@@ -18,7 +18,6 @@ for module_name, module in block_modules.items():
     if hasattr(module, 'BLOCKS'):
         BLOCKS[module_name] = module.BLOCKS
 
-
 class CodeBlock(QPushButton):
     def __init__(self, text, function, module_name, parent=None):
         super().__init__(text, parent)
@@ -36,11 +35,11 @@ class CodeBlock(QPushButton):
             mime = QMimeData()
             mime.setText(f"{self.module_name}:{self.block_name}")
             drag.setMimeData(mime)
-            drag.exec_(Qt.CopyAction)
+            drag.exec_(Qt.CopyAction | Qt.MoveAction)
 
     def mouseDoubleClickEvent(self, e):
         import re
-        if e.button() == Qt.LeftButton and type(self).__name__ is "CodeBlock":
+        if e.button() == Qt.LeftButton and type(self).__name__ == "CodeBlock":
             if self.prepare_input():
                 text = re.findall(r'\((.*?)\)', self.block_name)
 
@@ -73,3 +72,4 @@ class CodeBlock(QPushButton):
         else:
             self.function_inputs = []
             return False
+
