@@ -5,3 +5,4 @@ src/__pycache__/
 tools/TTFisClient.py
 tools/ToellnerDriver.py
 log/
+tools/Gen5DebugLibrary.py

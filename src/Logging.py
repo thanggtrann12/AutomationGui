@@ -13,7 +13,7 @@ class QTextEditLogger(logging.Handler):
     def emit(self, record):
         msg = self.format(record)
         self.widget.append(msg)
-        # Extract timestamp, level, and message
+        self.widget.ensureCursorVisible()
         log_entries.append((
             record.asctime,
             record.levelname,

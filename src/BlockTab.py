@@ -5,6 +5,7 @@ import os  # Import os as it's used in the code
 from .CodeBlock import *
 from .Logging import *
 from .Step import *
+import asyncio
 
 
 class BlockTab:
@@ -128,21 +129,37 @@ class BlockTab:
         self.steps_container.update()
         logging.info(f"Code imported from {file_path}")
 
-    def run_code(self):
+    async def run_code(self):
         try:
             for i, step in enumerate(self.steps, 1):
                 if step.block:
                     try:
                         logging.info(
                             f"Executing step {i}: {step.block.block_name}")
-                        step.block.function()
+                        result = await step.block.function(
+                            *step.block.function_inputs)
+
+                        if result:
+                            logging.info(
+                                f"Step {i}: {step.block.block_name} executed successfully")
+                            # Set background color to light green for success
+                            step.set_color("lightgreen")  # Success
+                        else:  # If the function returns False or fails
+                            logging.critical(
+                                f"Error executing step {i} ({step.block.block_name})")
+                            # Set background color to light red for failure
+                            step.set_color("background-color: lightcoral;")
+
                     except Exception as e:
                         logging.error(
-                            f"Error executing step {i} ({step.block.block_name}): {e}")
-                        break
+                            f"Exception occurred during step {i}: {e}")
+                        # Set background color to light red for failure due to exception
+                        step.set_color("background-color: lightcoral;")
             else:
                 logging.info("All steps executed successfully")
                 output_file = 'log/log_report.html'
                 export_logs_to_html(output_file)
+
         except Exception as e:
+            logging.error(f"Unexpected error: {e}")
             pass

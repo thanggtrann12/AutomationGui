@@ -28,6 +28,7 @@ with open(config_file, "r") as f:
 def clear_log():
     print("Clear log")
     aurix_log.clear()
+    return True
 
 
 def save_log():
@@ -36,6 +37,7 @@ def save_log():
         with open(tffis_path, 'w') as file:
             for item in aurix_log:
                 file.write(item + '\n')
+    return True
 
 
 BLOCKS = {

@@ -23,6 +23,10 @@ class Step(QWidget):
         else:
             self.placeholder = None
 
+    def set_color(self, color: str):
+        """Set background color of the step."""
+        self.block.setStyleSheet(f"background-color: {color};")
+
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasText():
             event.acceptProposedAction()

@@ -1,4 +1,5 @@
 import subprocess
+import asyncio
 
 
 class ADBCommand:
@@ -7,52 +8,71 @@ class ADBCommand:
         self.toggle_watchdog_command = ""
         self.device_list = self.check_devices()
         self.is_connected = bool(self.device_list)
-        self.mode = "Normal"
 
     def check_devices(self):
         result = subprocess.run(
             ["adb", "devices"], text=True, capture_output=True)
-        devices = [line.split()[0] for line in result.stdout.splitlines()
+        devices = [line for line in result.stdout.splitlines()
                    if "\tdevice" in line or "\trecovery" in line]
-        if devices:
-            self.mode = "Recovery" if "recovery" in result.stdout.splitlines()[
-                1] else "Normal"
         return devices
+
+    def is_recovery_mode(self):
+        self.refresh_connection()
+        if self.is_connected:
+            if "recovery" in self.device_list:
+                return True
+            else:
+                return False
 
     def refresh_connection(self):
         self.device_list = self.check_devices()
         self.is_connected = bool(self.device_list)
 
-    def set_root_privilege(self) -> bool:
-        self.run_subprocess(["adb", "root"])
+    async def set_root_privilege(self) -> bool:
+        self.refresh_connection()
+        if await self.check_root_privilege():
+            return True
+        await self.run_subprocess(["adb", "root"])
+        await asyncio.sleep(5)
+        return await self.check_root_privilege()
 
-    def check_root_privilege(self) -> bool:
-        result = self.run_subprocess(["adb", "shell", "id"])
+    async def check_root_privilege(self) -> bool:
+        self.refresh_connection()
+        result = await self.run_subprocess(["adb", "shell", "id"])
         return "uid=0(root)" in result.stdout
 
-    def run_subprocess(self, command):
-        result = subprocess.run(command, shell=True,
-                                capture_output=True, text=True)
-        print(result.stdout)
+    async def run_subprocess(self, command) -> subprocess.CompletedProcess:
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            stdout, stderr = await process.communicate()
+            stdout_decoded = stdout.decode()
+            stderr_decoded = stderr.decode()
+            return subprocess.CompletedProcess(command, process.returncode, stdout_decoded, stderr_decoded)
+        except Exception as e:
+            pass
 
-    def run_adb_shell_command(self, user_command):
+    async def run_adb_shell_command(self, user_command):
+        self.refresh_connection()
         base_command = ["adb", "shell"]
         full_command = base_command + user_command.split()
-        self.run_subprocess(full_command)
+        result = await self.run_subprocess(full_command)
+        return result
 
-    def reboot_to_recovery_mode(self):
+    async def reboot_to_mode(self, mode="Normal"):
+        self.refresh_connection()
         if self.is_connected:
-            self.run_subprocess(["adb", "reboot", "recovery"])
-
-    def reboot_to_normal_mode(self):
-        if self.is_connected:
-            self.run_subprocess(["adb", "reboot", "normal"])
+            await self.run_subprocess(["adb", "reboot", mode])
 
     def push_file(self, file_path, des_path):
         if self.is_connected:
             result = self.run_subprocess(["adb", "push", file_path, des_path])
             success_patterns = ["1 file pushed", "0 skipped"]
-            return any(pattern in result.stdout for pattern in success_patterns)
+            fail_patterns = ["error", "failed to copy"]
+            return any(pattern in result.stdout for pattern in success_patterns) and not any(pattern in result.stdout for pattern in fail_patterns)
 
     def swu_timer_shutdown(self):
         if self.is_connected:
@@ -65,6 +85,11 @@ class ADBCommand:
             return result
 
     def remount(self):
-        if self.is_connected:
+        if self.is_connected and self.check_root_privilege():
             result = self.run_subprocess(["adb", "remount"])
             return result
+
+
+# adb = ADBCommand()
+# adb.push_file(
+#     file_path=r"C:\Users\rhn9hc\Desktop\lib\lcm_dynamic_service", des_path="/")

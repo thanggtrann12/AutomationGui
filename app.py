@@ -1,6 +1,9 @@
 import sys
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import QTextEdit, QPushButton, QComboBox
+import asyncio
+from asyncqt import QEventLoop
+
 # import from scr
 from src.Logging import *
 from src.BlockTab import BlockTab
@@ -32,7 +35,7 @@ class AutomationGUI(QtWidgets.QMainWindow):
         self.export_btn.clicked.connect(self.block_tab.export_code)
         self.import_btn.clicked.connect(self.block_tab.import_code)
         self.remove_btn.clicked.connect(self.block_tab.remove_code)
-        self.run_btn.clicked.connect(self.block_tab.run_code)
+        self.run_btn.clicked.connect(self.wrap_async(self.block_tab.run_code))
         self.clear_btn.clicked.connect(self.block_tab.clear_steps)
         self.test_case_name_input = QtWidgets.QLineEdit()
         self.block_layout = self.findChild(
@@ -41,9 +44,18 @@ class AutomationGUI(QtWidgets.QMainWindow):
         self.block_edit_area = self.findChild(
             QtWidgets.QScrollArea, "block_edit_area")
 
+    def wrap_async(self, coro):
+        return lambda: asyncio.create_task(coro())
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = AutomationGUI()
     window.show()
-    sys.exit(app.exec_())
+
+    # Run the PyQt5 event loop and asyncio event loop
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
+    with loop:
+        # Start the PyQt5 event loop
+        loop.run_forever()
