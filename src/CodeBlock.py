@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QDrag
-from PyQt5.QtWidgets import QPushButton, QInputDialog
+from PyQt5.QtWidgets import QPushButton, QInputDialog, QFileDialog
 import os
 import importlib
 import inspect
@@ -17,6 +17,7 @@ BLOCKS = {}
 for module_name, module in block_modules.items():
     if hasattr(module, 'BLOCKS'):
         BLOCKS[module_name] = module.BLOCKS
+
 
 class CodeBlock(QPushButton):
     def __init__(self, text, function, module_name, parent=None):
@@ -60,16 +61,24 @@ class CodeBlock(QPushButton):
             inputs = []
             signature = inspect.signature(self.function)
 
-            # Prompt for each parameter
             for param in signature.parameters:
-                value, ok = QInputDialog.getText(
-                    self, 'Input', f'Enter value for {param}:')
-                if ok:
-                    inputs.append(int(value))
+                # Check if the parameter might represent a file or directory path
+                if "path" in param or "file" in param:
+                    file_path = QFileDialog.getOpenFileName(
+                        self, 'Select File', '', '*.pro')[0]
+                    if file_path:
+                        inputs.append(file_path)
+                    else:
+                        return False  # User canceled the dialog
+                else:
+                    value, ok = QInputDialog.getText(
+                        self, 'Input', f'Enter value for {param}:')
+                    if ok:
+                        # Handle as an integer input, modify as needed
+                        inputs.append(int(value))
 
             self.function_inputs = inputs
             return True
         else:
             self.function_inputs = []
             return False
-

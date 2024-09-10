@@ -1,16 +1,17 @@
-import sys
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtWidgets import QTextEdit, QPushButton, QComboBox
+from PyQt5.QtWidgets import QPushButton, QMainWindow, QTextEdit, QComboBox, QApplication, QMessageBox, QScrollArea, QLineEdit, QHBoxLayout
+from PyQt5.QtCore import QEventLoop
+from PyQt5 import uic
 import asyncio
+import sys
 from asyncqt import QEventLoop
-
+import logging
 # import from scr
 from src.Logging import *
 from src.BlockTab import BlockTab
 # end
 
 
-class AutomationGUI(QtWidgets.QMainWindow):
+class AutomationGUI(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi('UI/main.ui', self)
@@ -37,22 +38,58 @@ class AutomationGUI(QtWidgets.QMainWindow):
         self.remove_btn.clicked.connect(self.block_tab.remove_code)
         self.run_btn.clicked.connect(self.wrap_async(self.block_tab.run_code))
         self.clear_btn.clicked.connect(self.block_tab.clear_steps)
-        self.test_case_name_input = QtWidgets.QLineEdit()
+        self.test_case_name_input = QLineEdit()
         self.block_layout = self.findChild(
-            QtWidgets.QHBoxLayout, "block_layout")
-
+            QHBoxLayout, "block_layout")
         self.block_edit_area = self.findChild(
-            QtWidgets.QScrollArea, "block_edit_area")
-
-        self.add_test_case_btn = self.findChild(QPushButton, "add_test_case_btn")
+            QScrollArea, "block_edit_area")
+        self.add_test_case_btn = self.findChild(
+            QPushButton, "add_test_case_btn")
         self.add_test_case_btn.clicked.connect(self.block_tab.add_test_case)
 
     def wrap_async(self, coro):
         return lambda: asyncio.create_task(coro())
 
+    def closeEvent(self, event):
+        """Handle the close event of the window."""
+        reply = QMessageBox.question(self, 'Exit Confirmation',
+                                     'Are you sure you want to exit?',
+                                     QMessageBox.Yes |
+                                     QMessageBox.No,
+                                     QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            import psutil
+            logging.info("Cleaning up before exit...")
+            name = "csm.exe"
+            for proc in psutil.process_iter(['pid', 'name']):
+                if proc.info['name'].lower() == name.lower():
+                    try:
+                        proc.terminate()
+                        proc.wait(timeout=3)
+                        logging.info(
+                            f"Terminated process {proc.info['name']} with PID {proc.info['pid']}")
+                        terminated = True
+                    except psutil.NoSuchProcess:
+                        logging.critical(
+                            f"Process {proc.info['name']} with PID {proc.info['pid']} does not exist")
+                    except psutil.AccessDenied:
+                        logging.critical(
+                            f"Access denied to terminate process {proc.info['name']} with PID {proc.info['pid']}")
+                    except psutil.TimeoutExpired:
+                        logging.critical(
+                            f"Timeout expired while waiting for process {proc.info['name']} with PID {proc.info['pid']} to terminate")
+
+            if not terminated:
+                logging.info(f"No process found with the name {name}")
+
+            event.accept()
+        else:
+            event.ignore()
+
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = AutomationGUI()
     window.show()
 
