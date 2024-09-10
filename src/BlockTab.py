@@ -9,6 +9,8 @@ from .CodeBlock import *
 from .Logging import *
 from .Step import *
 
+MAX_ROW_PER_MODULE = 10
+
 
 class CaptureHandler(logging.Handler):
     def __init__(self):
@@ -30,23 +32,34 @@ class BlockTab:
         self.refresh_testcase_list()
 
     def setup_block_tab(self):
-        for module_name, module_blocks in BLOCKS.items():
+        for module_name, module_blocks in get_all_blocks().items():
             group_box = QtWidgets.QGroupBox(module_name)
-            group_layout = QtWidgets.QVBoxLayout()
-            for block_name, function in module_blocks.items():
+            group_layout = QtWidgets.QGridLayout()
+
+            col = 0
+            row = 0
+
+            for index, (block_name, function) in enumerate(module_blocks.items()):
+                row = index % MAX_ROW_PER_MODULE
+                col = index // MAX_ROW_PER_MODULE
+
                 block = CodeBlock(block_name, function, module_name)
-                group_layout.addWidget(block)
+                group_layout.addWidget(block, row, col)
+
             group_box.setLayout(group_layout)
             self.parent.block_layout.addWidget(group_box)
 
-        scroll_area = QtWidgets.QScrollArea()
+        # Setup scroll area
+        scroll_area = QtWidgets.QScrollArea(self.parent)
         scroll_area.setWidgetResizable(True)
+
         scroll_widget = QtWidgets.QWidget()
         self.containers_layout = QtWidgets.QHBoxLayout(
-            scroll_widget)  # Change to QHBoxLayout
+            scroll_widget)  # QHBoxLayout for scroll widget
         scroll_area.setWidget(scroll_widget)
-        self.parent.block_edit_area.setWidget(scroll_area)
 
+        self.parent.block_edit_area.setWidget(
+            scroll_area)  # Set scroll_area as widget
         self.add_test_case()  # Add the first container
 
     def refresh_testcase_list(self):
@@ -139,7 +152,6 @@ class BlockTab:
         test_case_name = os.path.splitext(os.path.basename(file_path))[0]
         self.test_case_name_input = QLabel(test_case_name)
 
-        # Remove the first empty container that was added by clear_steps
         if self.containers:
             self.containers[0].deleteLater()
             self.containers.pop(0)
@@ -152,7 +164,7 @@ class BlockTab:
             for step_data in container_data.get("steps", []):
                 module_name = step_data.get("module")
                 block_name = step_data.get("block")
-                if module_name in BLOCKS and block_name in BLOCKS[module_name]:
+                if module_name in get_all_blocks() and block_name in get_all_blocks()[module_name]:
                     if first_step:
                         # Replace the placeholder in the first step
                         first_step_widget = new_container.layout.itemAt(

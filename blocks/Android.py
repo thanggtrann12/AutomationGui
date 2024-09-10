@@ -43,10 +43,22 @@ async def push_service_file_to_device() -> bool:
     return await adb_device.push_file(file_path=r"C:\Users\rhn9hc\Desktop\lib\lcm_dynamic_service", des_path="/vendor/bin")
 
 
+async def trigger_property(property) -> bool:
+    logging.info(f"Executed with property {property}")
+    return await adb_device.run_adb_shell_command(property)
+
+
 BLOCKS = {
     "Enable Root Privilege": enable_root_privilege,
     "Remount Device": remount_device,
     "Push Service File": push_service_file_to_device,
     "Reboot to Recovery Mode": reboot_to_recovery_mode,
     "Reboot to Normal Mode": reboot_to_normal_mode,
+    "Trigger Property": trigger_property,
+    "Reboot to  Mode": reboot_to_recovery_mode,
+    "Reboot to Normal ": reboot_to_normal_mode,
+    "Trigger ": trigger_property,
+    "to  Mode": reboot_to_recovery_mode,
+    "to Normal ": reboot_to_normal_mode,
+    "Triggear ": trigger_property,
 }

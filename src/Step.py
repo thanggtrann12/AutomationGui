@@ -1,5 +1,5 @@
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent, QPainter, QPen
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QApplication,QLineEdit
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QApplication, QLineEdit
 from PyQt5.QtCore import Qt
 from .CodeBlock import *
 
@@ -70,7 +70,7 @@ class Step(QWidget):
             self.placeholder.deleteLater()
             self.placeholder = None
         self.block = CodeBlock(
-            block_name, BLOCKS[module_name][block_name], module_name)
+            block_name, get_all_blocks()[module_name][block_name], module_name)
         self.layout.addWidget(self.block)
 
     def mousePressEvent(self, event):
@@ -96,9 +96,7 @@ class StepContainer(QWidget):
         super().__init__(parent)
         self.layout = QVBoxLayout()
         self.layout.setSpacing(10)
-        self.layout.setContentsMargins(5, 5, 5, 5)
         self.setLayout(self.layout)
-        self.setStyleSheet("border: 2px solid #a0a0a0; border-radius: 5px; background-color: #f0f0f0;")
         self.setAcceptDrops(True)
         self.name_input = QLineEdit("New Test Case")
         self.name_input.setAlignment(Qt.AlignCenter)

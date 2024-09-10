@@ -28,6 +28,7 @@ class AutomationGUI(QMainWindow):
         self.run_btn = self.findChild(QPushButton, "run_btn")
         self.clear_btn = self.findChild(QPushButton, "clear_btn")
         self.remove_btn = self.findChild(QPushButton, "remove_btn")
+        self.reload_btn = self.findChild(QPushButton, "reload_btn")
 
         self.console = self.findChild(QTextEdit, "log_console")
         self.testcase_list = self.findChild(QComboBox, "testcase_list")
@@ -37,6 +38,7 @@ class AutomationGUI(QMainWindow):
         self.import_btn.clicked.connect(self.block_tab.import_code)
         self.remove_btn.clicked.connect(self.block_tab.remove_code)
         self.run_btn.clicked.connect(self.wrap_async(self.block_tab.run_code))
+        self.reload_btn.clicked.connect(self.reload_window)
         self.clear_btn.clicked.connect(self.block_tab.clear_steps)
         self.test_case_name_input = QLineEdit()
         self.block_layout = self.findChild(
@@ -46,6 +48,11 @@ class AutomationGUI(QMainWindow):
         self.add_test_case_btn = self.findChild(
             QPushButton, "add_test_case_btn")
         self.add_test_case_btn.clicked.connect(self.block_tab.add_test_case)
+
+    def reload_window(self):
+        self.close()
+        self.__init__()
+        self.show()
 
     def wrap_async(self, coro):
         return lambda: asyncio.create_task(coro())
@@ -59,29 +66,30 @@ class AutomationGUI(QMainWindow):
                                      QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            import psutil
-            logging.info("Cleaning up before exit...")
-            name = "csm.exe"
-            for proc in psutil.process_iter(['pid', 'name']):
-                if proc.info['name'].lower() == name.lower():
-                    try:
-                        proc.terminate()
-                        proc.wait(timeout=3)
-                        logging.info(
-                            f"Terminated process {proc.info['name']} with PID {proc.info['pid']}")
-                        terminated = True
-                    except psutil.NoSuchProcess:
-                        logging.critical(
-                            f"Process {proc.info['name']} with PID {proc.info['pid']} does not exist")
-                    except psutil.AccessDenied:
-                        logging.critical(
-                            f"Access denied to terminate process {proc.info['name']} with PID {proc.info['pid']}")
-                    except psutil.TimeoutExpired:
-                        logging.critical(
-                            f"Timeout expired while waiting for process {proc.info['name']} with PID {proc.info['pid']} to terminate")
+            #     import psutil
+            #     terminated = False
+            #     logging.info("Cleaning up before exit...")
+            #     name = "csm.exe"
+            #     for proc in psutil.process_iter(['pid', 'name']):
+            #         if proc.info['name'].lower() == name.lower():
+            #             try:
+            #                 proc.terminate()
+            #                 proc.wait(timeout=3)
+            #                 logging.info(
+            #                     f"Terminated process {proc.info['name']} with PID {proc.info['pid']}")
+            #                 terminated = True
+            #             except psutil.NoSuchProcess:
+            #                 logging.critical(
+            #                     f"Process {proc.info['name']} with PID {proc.info['pid']} does not exist")
+            #             except psutil.AccessDenied:
+            #                 logging.critical(
+            #                     f"Access denied to terminate process {proc.info['name']} with PID {proc.info['pid']}")
+            #             except psutil.TimeoutExpired:
+            #                 logging.critical(
+            #                     f"Timeout expired while waiting for process {proc.info['name']} with PID {proc.info['pid']} to terminate")
 
-            if not terminated:
-                logging.info(f"No process found with the name {name}")
+            #     if not terminated:
+            #         logging.info(f"No process found with the name {name}")
 
             event.accept()
         else:
