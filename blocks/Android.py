@@ -8,8 +8,7 @@ adb_device = ADBCommand()
 
 async def enable_root_privilege() -> bool:
     logging.info("Enabling root privilege...")
-    await adb_device.set_root_privilege()
-    return await adb_device.check_root_privilege()
+    return await adb_device.set_root_privilege()
 
 
 async def remount_device() -> bool:
@@ -55,10 +54,4 @@ BLOCKS = {
     "Reboot to Recovery Mode": reboot_to_recovery_mode,
     "Reboot to Normal Mode": reboot_to_normal_mode,
     "Trigger Property": trigger_property,
-    "Reboot to  Mode": reboot_to_recovery_mode,
-    "Reboot to Normal ": reboot_to_normal_mode,
-    "Trigger ": trigger_property,
-    "to  Mode": reboot_to_recovery_mode,
-    "to Normal ": reboot_to_normal_mode,
-    "Triggear ": trigger_property,
 }

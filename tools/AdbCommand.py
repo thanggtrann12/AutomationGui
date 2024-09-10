@@ -32,7 +32,7 @@ class ADBCommand:
         if await self.check_root_privilege():
             return True
         await self.run_subprocess(["adb", "root"])
-        await asyncio.sleep(5)
+        await asyncio.sleep(8)
         return await self.check_root_privilege()
 
     async def check_root_privilege(self) -> bool:

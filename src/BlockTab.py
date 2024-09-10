@@ -240,8 +240,9 @@ class BlockTab:
 
                 test_results[f"Test Case {container_index}: {container_name}"] = container_results
                 logging.info(f"Finished Test Case {container_index}")
-                # save_log()
-                # clear_log()
+                file_name = container_name.replace(" ", "_")
+                await save_log(f"D:\\Python\\AutomationGui\\ttfis_log\\{file_name}.pro")
+                await clear_log()
             import webbrowser
             import os
             file_path = os.path.abspath(

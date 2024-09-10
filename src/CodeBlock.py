@@ -34,7 +34,7 @@ class CodeBlock(QPushButton):
         self.function_inputs = []
         self.setStyleSheet(
             "background-color: #f0f0f0; border: 1px solid #c0c0c0; border-radius: 5px;")
-        self.setFixedSize(150, 40)
+        # self.setFixedHeight(150, 40)
 
     def mouseMoveEvent(self, e):
         if e.buttons() == Qt.LeftButton:
@@ -68,7 +68,6 @@ class CodeBlock(QPushButton):
             signature = inspect.signature(self.function)
 
             for param in signature.parameters:
-                # Check if the parameter might represent a file or directory path
                 if "path" in param or "file" in param:
                     file_path = QFileDialog.getOpenFileName(
                         self, 'Select File', '', '*.pro')[0]
@@ -81,7 +80,7 @@ class CodeBlock(QPushButton):
                         self, 'Input', f'Enter value for {param}:')
                     if ok:
                         # Handle as an integer input, modify as needed
-                        inputs.append(int(value))
+                        inputs.append(value)
 
             self.function_inputs = inputs
             return True

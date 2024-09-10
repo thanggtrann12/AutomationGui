@@ -66,30 +66,30 @@ class AutomationGUI(QMainWindow):
                                      QMessageBox.No)
 
         if reply == QMessageBox.Yes:
-            #     import psutil
-            #     terminated = False
-            #     logging.info("Cleaning up before exit...")
-            #     name = "csm.exe"
-            #     for proc in psutil.process_iter(['pid', 'name']):
-            #         if proc.info['name'].lower() == name.lower():
-            #             try:
-            #                 proc.terminate()
-            #                 proc.wait(timeout=3)
-            #                 logging.info(
-            #                     f"Terminated process {proc.info['name']} with PID {proc.info['pid']}")
-            #                 terminated = True
-            #             except psutil.NoSuchProcess:
-            #                 logging.critical(
-            #                     f"Process {proc.info['name']} with PID {proc.info['pid']} does not exist")
-            #             except psutil.AccessDenied:
-            #                 logging.critical(
-            #                     f"Access denied to terminate process {proc.info['name']} with PID {proc.info['pid']}")
-            #             except psutil.TimeoutExpired:
-            #                 logging.critical(
-            #                     f"Timeout expired while waiting for process {proc.info['name']} with PID {proc.info['pid']} to terminate")
+            import psutil
+            terminated = False
+            logging.info("Cleaning up before exit...")
+            name = "csm.exe"
+            for proc in psutil.process_iter(['pid', 'name']):
+                if proc.info['name'].lower() == name.lower():
+                    try:
+                        proc.terminate()
+                        proc.wait(timeout=3)
+                        logging.info(
+                            f"Terminated process {proc.info['name']} with PID {proc.info['pid']}")
+                        terminated = True
+                    except psutil.NoSuchProcess:
+                        logging.critical(
+                            f"Process {proc.info['name']} with PID {proc.info['pid']} does not exist")
+                    except psutil.AccessDenied:
+                        logging.critical(
+                            f"Access denied to terminate process {proc.info['name']} with PID {proc.info['pid']}")
+                    except psutil.TimeoutExpired:
+                        logging.critical(
+                            f"Timeout expired while waiting for process {proc.info['name']} with PID {proc.info['pid']} to terminate")
 
-            #     if not terminated:
-            #         logging.info(f"No process found with the name {name}")
+            if not terminated:
+                logging.info(f"No process found with the name {name}")
 
             event.accept()
         else:

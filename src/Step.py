@@ -18,8 +18,8 @@ class Step(QWidget):
             self.placeholder = QLabel("Drop block here")
             self.placeholder.setStyleSheet(
                 "background-color: #e0e0e0; border: 1px dashed #a0a0a0; border-radius: 5px;")
-            self.placeholder.setAlignment(Qt.AlignCenter)
-            self.placeholder.setFixedSize(150, 40)
+            self.placeholder.setAlignment(Qt.AlignLeft)
+            self.placeholder.setFixedHeight(30)
             self.layout.addWidget(self.placeholder)
         else:
             self.placeholder = None
@@ -46,7 +46,6 @@ class Step(QWidget):
             source_container = source.container
             target_container = self.container
 
-            source_index = source_container.layout.indexOf(source)
             target_index = target_container.layout.indexOf(self)
 
             if source_container == target_container:
